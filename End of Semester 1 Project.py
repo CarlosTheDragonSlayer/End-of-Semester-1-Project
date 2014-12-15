@@ -1,104 +1,99 @@
+
 from Tkinter import *
-root = Tk()
-drawpad = Canvas(width=1360,height=700, background='#BFF5ED')
+from tkMessageBox import *
 
-#File retrieval (not being used at the moment)
 
-#Background image
-bg = PhotoImage(file = 'C:\Users\e134126\Documents\GitHub\\test\\Game BG.gif')
-drawpad.create_image(0, 0, image = bg, anchor= NW)
+class Calculator(Frame):
 
-#Player image
-pimg = PhotoImage(file = 'C:\Users\e134126\Documents\GitHub\\test\\Player.gif')
-player = drawpad.create_image(50, 100, image = pimg, anchor= NW)
-
-#Projectile
-blood = drawpad.create_rectangle(400,585,405,590, fill="black")
-
-#Enemy image
-enemy = drawpad.create_rectangle(50,50,100,60, fill="red", outline="red")
-
-bloodfired = False
-direction = 5
-directon2 = -1
-
-class myApp(object):
-    def __init__(self, parent):
-        
-        global drawpad
-        self.myParent = parent  
-        self.myContainer1 = Frame(parent)
-        self.myContainer1.pack()
-        
-        self.bloodfired = False
-        # Adding the drawpad, adding the key listener, starting animation
-        drawpad.pack()
-        root.bind_all('<Key>', self.key)
-        self.animate()
-        
     
-    
-    def animate(self):
-        global drawpad
-        global enemy
-        global direction2
-        global direction
-        global bloodfired
-        global player
-        x1,y1,x2,y2 = drawpad.coords(enemy)
-        rx1,ry1,rx2,ry2 = drawpad.coords(blood)
+    def frame(this, side): 
+        w = Frame(this)
+        w.pack(side=side, expand=YES, fill=BOTH)
+        return w
 
-        if x2 > 800:
-            direction = - 5
-        elif x1 < 0:
-            direction = 5
-        drawpad.move(enemy, direction, 0)
-        
-        if bloodfired == True:
-            drawpad.move(blood, 10, 0)
-        if self.collisionDetect() == True:
-            drawpad.delete(enemy)
-        if ry2<0:
-            bloodfired = False
-            drawpad.move(blood, (px1-rx1), (py1-ry1))
-        #drawpad.after(10,self.animate)
+    def button(this, root, side, text, command=None): 
+        w = Button(root, text=text, command=command) 
+        w.pack(side=side, expand=YES, fill=BOTH)
+        return w
 
-    def key(self, event):
-        global player
-        global drawpad
-        global blood
-        print "hello"
-        x1,y1 = drawpad.coords(player)
-        
-        if event.char == " ":
-            bloodfired = True
-        if event.char == "w":
-            if y1>0:
-                drawpad.move(player,0,-50)
-                drawpad.move(blood,0,-50)
-        elif event.char == "d":
-            if x1+50<800:
-                drawpad.move(player,50,0)
-                drawpad.move(blood,50,0)
-        elif event.char == "a":
-            if x1>0:
-                drawpad.move(player,-50,0)
-                drawpad.move(blood,-50,0)
-        elif event.char == "s":
-            if y1+100<600:
-                drawpad.move(player,0,50)
-                drawpad.move(blood,0,50)
-            
-    
-    def collisionDetect(self):
-        rx1,ry1,rx2,ry2 = drawpad.coords(blood)
-        x1,y1,x2,y2 = drawpad.coords(enemy)
-        if (rx1>=x1 and rx2<=x2) and (ry1>=y1 and ry2<=y2):
-            return True
+    need_clr = False
+    def digit(self, digit):
+        if self.need_clr:
+            self.display.set('')
+            self.need_clr = False
+        self.display.set(self.display.get() + digit)
+
+    def sign(self):
+        need_clr = False
+        cont = self.display.get()
+        if len(cont) > 0 and cont[0] == '-':
+            self.display.set(cont[1:])
         else:
-            return False
-            
-app = myApp(root)
+            self.display.set('-' + cont)
 
-#For canvas
-root.mainloop()
+ 
+    def decimal(self):
+        self.need_clr = False
+        cont = self.display.get()
+        lastsp = cont.rfind(' ')
+        if lastsp == -1:
+            lastsp = 0
+        if cont.find('.',lastsp) == -1:
+            self.display.set(cont + '.')
+
+  
+    def oper(self, op):
+        self.display.set(self.display.get() + ' ' + op + ' ')
+        self.need_clr = False
+
+   
+    def calc(self):
+        try:
+            self.display.set(`eval(self.display.get())`)
+            self.need_clr = True
+        except:
+            showerror('Operation Error', 'Illegal Operation')
+            self.display.set('')
+            self.need_clr = False
+
+    def __init__(self):
+        Frame.__init__(self)
+        self.option_add('*Font', 'Verdana 12 bold')
+        self.pack(expand=YES, fill=BOTH)
+        self.master.title('Simple Calculator')
+
+ 
+        self.display = StringVar()
+        e = Entry(self, relief=SUNKEN, textvariable=self.display)
+        e.pack(side=TOP, expand=YES, fill=BOTH)
+
+        
+        for key in ("123", "456", "789"):
+            keyF = self.frame(TOP)
+            for char in key:
+                self.button(keyF, LEFT, char,
+                            lambda c=char: self.digit(c))
+
+        keyF = self.frame(TOP)
+        self.button(keyF, LEFT, '-', self.sign)
+        self.button(keyF, LEFT, '0', lambda ch='0': self.digit(ch))
+        self.button(keyF, LEFT, '.', self.decimal)
+
+
+        opsF = self.frame(TOP)
+        for char in "+-*/=":
+            if char == '=':
+                btn = self.button(opsF, LEFT, char, self.calc)
+            else:
+                btn = self.button(opsF, LEFT, char, 
+                                  lambda w=self, s=char: w.oper(s))
+
+        # Clear button.
+        clearF = self.frame(BOTTOM)
+        self.button(clearF, LEFT, 'Clr', lambda w=self.display: w.set(''))
+
+
+if __name__ == '__main__':
+    Calculator().mainloop()
+
+
